@@ -2,7 +2,6 @@ from dotenv import load_dotenv
 import requests as r
 import os
 import logfire
-import zipfile
 
 load_dotenv()
 logfire.configure(send_to_logfire=True)
@@ -54,11 +53,4 @@ def pull_observations(series_id: str) -> dict:
     except Exception as e:
         logfire.error(f"Error saving zip file: {e}")
         return {"success": False, "error": e}
-    # try:
-    #     with zipfile.ZipFile(zip_path, "r") as zip_ref:
-    #         zip_ref.extract("*.csv", "data")
-    #     logfire.info(f"CSV file extracted: {zip_path}")
-    # except Exception as e:
-    #     logfire.error(f"Error extracting CSV file: {e}")
-    #     return {"success": False, "error": e}
     return {"success": True, "zip_path": zip_path}
