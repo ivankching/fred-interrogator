@@ -1,5 +1,5 @@
 import pytest
-from search_agent import search_series, keyword_agent, get_seriess_from_query, sanitize_keywords
+from search_agent import search_series, keyword_agent, get_seriess_from_query, sanitize_keywords, pick_series
 import logfire
 from pathlib import Path
 
@@ -37,3 +37,11 @@ async def test_get_seriess_from_query():
     expected_md_out = Path("md_output/seriess.md")
     assert result
     assert expected_md_out.is_file()
+
+@pytest.mark.asyncio
+async def test_pick_series():
+    query = "What is the monthly monetary service index?"
+    with open("tests/seriess.md", "r") as f:
+        seriess_md = f.read()
+    result = await pick_series(query, seriess_md)
+    assert result

@@ -88,3 +88,34 @@ async def get_seriess_from_query(query: str) -> str:
     with open("md_output/seriess.md", "w") as f:
         f.write(seriess_md)
     return seriess_md
+
+class Series(BaseModel):
+    title: str = Field(description="The title of the series.")
+    id: str = Field(description="The id of the series.")
+
+series_picker_agent = Agent(
+    model=ollama_model,
+    output_type=Series,
+    system_prompt="""\
+You are an agent that picks one series from a list of series that best matches the query provided by the user.
+"""
+)
+
+async def pick_series(query: str, seriess_md: str) -> dict | None:
+    prompt = f"""\
+Given a query {query}, pick one series that best answers the query from the following markdown list:
+
+{seriess_md}
+
+Respond with only the series title and id chosen.
+"""
+    logfire.info(f"Prompt: {prompt}")
+    result = await series_picker_agent.run(prompt)
+    if result.output is None:
+        logfire.error("No series chosen")
+        return None
+    logfire.info(f"Series: {result.output}")
+    series = {}
+    series["title"] = result.output.title
+    series["id"] = result.output.id
+    return series
