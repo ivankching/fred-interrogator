@@ -1,6 +1,8 @@
 import zipfile
 import logfire
 from pathlib import Path
+import csv
+from datetime import datetime
 
 logfire.configure(send_to_logfire=True)
 
@@ -44,3 +46,61 @@ def zipfile_to_csv(zip_path: Path, csv_path: Path = Path("data/csv")) -> list[Pa
         logfire.error(f"Error extracting zip file: {e}")
     logfire.info(f"CSV files extracted: {unzipped_files}")
     return unzipped_files
+
+
+def get_csv_schema(filepath):
+    with open(filepath, 'r') as f:
+        reader = csv.reader(f)
+        
+        # Get headers
+        headers = next(reader)
+        
+        # Sample first few rows to infer types
+        sample_rows = []
+        for i, row in enumerate(reader):
+            sample_rows.append(row)
+            if i >= 100:  # Sample first 100 rows
+                break
+        
+        # Infer types for each column
+        schema = {}
+        for i, header in enumerate(headers):
+            column_values = [row[i] for row in sample_rows if i < len(row)]
+            schema[header] = infer_type(column_values)
+        
+        return {
+            'columns': headers,
+            'types': schema,
+            'sample_size': len(sample_rows)
+        }
+
+def infer_type(values):
+    """Simple type inference"""
+    non_empty = [v for v in values if v.strip()]
+    
+    if not non_empty:
+        return 'empty'
+    
+    # Try integer
+    try:
+        [int(v) for v in non_empty]
+        return 'integer'
+    except ValueError:
+        pass
+    
+    # Try float
+    try:
+        [float(v) for v in non_empty]
+        return 'float'
+    except ValueError:
+        pass
+
+    # Try date
+    try:
+        [datetime.strptime(v, '%Y-%m-%d') for v in non_empty]
+        return 'date'
+    except ValueError:
+        pass
+    
+    return 'string'
+
