@@ -4,7 +4,7 @@ from pathlib import Path
 
 logfire.configure(send_to_logfire=True)
 
-def zipfile_to_csv(zip_path: Path, csv_path: Path = Path("data/csv")) -> list[str]:
+def zipfile_to_csv(zip_path: Path, csv_path: Path = Path("data/csv")) -> list[Path]:
     """
     Unzip a zip file containing CSV files and extract them to a specified path.
 
@@ -21,7 +21,7 @@ def zipfile_to_csv(zip_path: Path, csv_path: Path = Path("data/csv")) -> list[st
     list[str]
         List of paths to the extracted CSV files
     """
-    csv_files = []
+    unzipped_files = []
     try:
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             # Get all filenames
@@ -38,6 +38,9 @@ def zipfile_to_csv(zip_path: Path, csv_path: Path = Path("data/csv")) -> list[st
             for csv_file in csv_files:
                 zip_ref.extract(csv_file, csv_path)
 
+            unzipped_files = [csv_path / f for f in csv_files]
+
     except Exception as e:
         logfire.error(f"Error extracting zip file: {e}")
-    return csv_files
+    logfire.info(f"CSV files extracted: {unzipped_files}")
+    return unzipped_files
