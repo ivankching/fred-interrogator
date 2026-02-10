@@ -10,10 +10,13 @@ def test_zipfile_to_csv():
 # TODO: Test get_csv_schema
 def test_get_csv_schema():
     schema = get_csv_schema(Path('data/csv/obs._by_real-time_period.csv'))
-    print(f"Columns: {schema['columns']}")
-    print(f"\nTypes:")
-    for col, dtype in schema['types'].items():
-        print(f"  {col}: {dtype}")
+    columns = ["period_start_date", "MSIM2", "realtime_start_date", "realtime_end_date"]
+    types = {"period_start_date": "date", "MSIM2": "float", "realtime_start_date": "date", "realtime_end_date": "empty"}
+    sample_size = 100
+    
+    assert schema['columns'] == columns
+    assert schema['types'] == types
+    assert schema['sample_size'] == sample_size
 
 def test_infer_type():
     integer_values = ['1', '2', '3']

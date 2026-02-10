@@ -3,6 +3,7 @@ import logfire
 from pathlib import Path
 import csv
 from datetime import datetime
+import random
 
 logfire.configure(send_to_logfire=True)
 
@@ -55,12 +56,9 @@ def get_csv_schema(filepath):
         # Get headers
         headers = next(reader)
         
-        # Sample first few rows to infer types
-        sample_rows = []
-        for i, row in enumerate(reader):
-            sample_rows.append(row)
-            if i >= 100:  # Sample first 100 rows
-                break
+        # Randomly sample 100 rows to infer types
+        rows = list(reader)
+        sample_rows = random.sample(rows, min(100, len(rows)))
         
         # Infer types for each column
         schema = {}
@@ -75,7 +73,19 @@ def get_csv_schema(filepath):
         }
 
 def infer_type(values):
-    """Simple type inference"""
+    """
+    Simple type inference
+    
+    Parameters
+    ----------
+    values : list
+        List of values to infer type for
+
+    Returns
+    -------
+    str
+        Inferred type
+    """
     non_empty = [v for v in values if v.strip()]
     
     if not non_empty:
