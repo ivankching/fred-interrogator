@@ -50,6 +50,23 @@ def zipfile_to_csv(zip_path: Path, csv_path: Path = Path("data/csv")) -> list[Pa
 
 
 def get_csv_schema(filepath):
+    """
+    Get the schema of a CSV file.
+
+    Parameters
+    ----------
+    filepath : Path
+        Path to the CSV file to get the schema of
+
+    Returns
+    -------
+    dict
+        A dictionary containing the schema of the CSV file.
+        The dictionary will have three keys: 'columns', 'types', and 'sample_size'.
+        The value for 'columns' will be a list of column names.
+        The value for 'types' will be a dictionary where the keys are column names and the values are the inferred types of the columns.
+        The value for 'sample_size' will be the number of rows that were sampled to infer the types of the columns.
+    """
     with open(filepath, 'r') as f:
         reader = csv.reader(f)
         
