@@ -1,4 +1,5 @@
-from process_data import zipfile_to_csv, get_csv_schema, infer_type
+from process_data import zipfile_to_csv, get_csv_schema, infer_type, get_db_relation_from_csv
+import duckdb
 from pathlib import Path
 
 def test_zipfile_to_csv():
@@ -28,3 +29,12 @@ def test_infer_type():
     assert infer_type(float_values) == 'float'
     assert infer_type(string_valeus) == 'string'
     assert infer_type(date_values) == 'date'
+
+def test_get_db_relation_from_csv():
+    csv_path = Path('data/csv/obs._by_real-time_period.csv')
+    relation = get_db_relation_from_csv(csv_path)
+    assert relation
+
+    results = duckdb.sql("SELECT COUNT(*) FROM relation").fetchall()
+    print(results)
+    assert(results == [(660,)])
