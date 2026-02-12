@@ -131,20 +131,3 @@ def infer_type(values):
         pass
     
     return 'string'
-
-def get_db_relation_from_csv(csv_path: Path) -> duckdb.DuckDBPyRelation:
-    """
-    Connect to a CSV file as a DuckDB relation.
-
-    Parameters
-    ----------
-    csv_path : Path
-        Path to the CSV file to connect to.
-
-    Returns
-    -------
-    duckdb.Relation
-        A DuckDB relation object connected to the CSV file.
-    """
-    csv_relation = duckdb.read_csv(csv_path)
-    return csv_relation
