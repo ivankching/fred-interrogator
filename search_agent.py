@@ -6,6 +6,7 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
 from typing import List
 from urllib.parse import quote
+import asyncio
 
 from pull_fred import search_keywords
 
@@ -14,6 +15,8 @@ import logfire
 logfire.configure()
 logfire.instrument_pydantic_ai()
 
+
+FRED_MAX_SERIES_REQUESTS = 5
 
 class Keywords(BaseModel):
     """The overall structure representing a list of keywords"""
@@ -31,6 +34,7 @@ keyword_agent = Agent(
 You are an agent that generates keywords from user input.
 Use the user query provided to generate keywords to search for in the FRED API.
 Pick one set of keywords and respond with only the keywords in a format sanitized for inserting into a HTTP request query parameter. Do not include any other text.
+The output should be a list of keywords.
 """
 )
 
@@ -59,12 +63,13 @@ async def search_series(keywords: str) -> str:
         return md_output
     return "No results found"
 
-def sanitize_keywords(keywords: List[str]) -> str:
+def sanitize_keywords(keywords: List[str]) -> List[str]:
     output = []
     for keyword in keywords:
-        output.append(keyword.replace(" ", "+"))
-    output = "|".join(output)
-    return quote(output, safe="+|")
+        output.append(quote(keyword.replace(" ", "+")))
+    return output
+    # output = "|".join(output)
+    # return quote(output, safe="+|")
 
 async def get_seriess_from_query(query: str) -> str:
     """
@@ -84,7 +89,12 @@ async def get_seriess_from_query(query: str) -> str:
     result = await keyword_agent.run(query)
     logfire.info(f"Keywords: {result.output.keywords}")
     keywords = sanitize_keywords(result.output.keywords)
-    seriess_md = await search_series(keywords)
+    async with asyncio.TaskGroup() as tg:
+        keywords = keywords[:FRED_MAX_SERIES_REQUESTS]
+        tasks = [tg.create_task(search_series(keyword)) for keyword in keywords]
+    series_md_list = [task.result() for task in tasks]
+    seriess_md = "\n".join(series_md_list)
+    # seriess_md = await search_series(keywords)
     with open("md_output/seriess.md", "w") as f:
         f.write(seriess_md)
     return seriess_md
