@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 
-from pydantic import BaseModel, Field
+from pydantic import Field, BaseModel
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
-from typing import List
 from urllib.parse import quote
 from pathlib import Path
 import duckdb
@@ -52,3 +51,53 @@ Use the user question provided to generate SQL queries to query a database.
 Respond with only the SQL query. Do not include any other text.
 """
     return system_prompt
+
+
+execute_sql_agent = Agent(
+    model=ollama_model,
+    deps_type=DatabaseInfo,
+    output_type=str,
+    system_prompt="""\
+You are an agent that generates, validates and executes SQL queries.
+Every time an SQL query is generated, validate it and execute it.
+If the generated SQL query fails to validate or fails to execute, try to modify the question and generate a new SQL query.
+
+Use the result of the SQL query to answer the user question.
+"""
+)
+
+@execute_sql_agent.tool
+async def get_sql_query(ctx: RunContext[DatabaseInfo], question: str) -> str:
+    """
+    Runs the SQL agent to generate an SQL query based on the user question and database information.
+
+    Args:
+        ctx (RunContext[DatabaseInfo]): The context containing the database information.
+        question (str): The user question.
+
+    Returns:
+        str: The generated SQL query.
+    """
+    result = await sql_agent.run(question, deps=ctx.deps)
+    sql_query = result.output
+    return sql_query
+
+
+@execute_sql_agent.tool_plain
+async def execute_sql_query(sql_query: str) -> str|None:
+    """
+    Executes the SQL query and returns the result.
+
+    Args:
+        sql_query (str): The SQL query to execute.
+
+    Returns:
+        str: The stringified result of the SQL query.
+    """
+    sql_query.replace("\\", "") # sometimes read_csv_auto('tablename') escapes the '
+    try:
+        result = duckdb.sql(sql_query).fetchall()
+        return str(result)
+    except duckdb.Error as e:
+        logfire.error(f"SQL error: {e}")
+        return None
