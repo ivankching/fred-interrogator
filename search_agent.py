@@ -68,8 +68,6 @@ def sanitize_keywords(keywords: List[str]) -> List[str]:
     for keyword in keywords:
         output.append(quote(keyword.replace(" ", "+")))
     return output
-    # output = "|".join(output)
-    # return quote(output, safe="+|")
 
 async def get_seriess_from_query(query: str) -> str:
     """
@@ -94,7 +92,6 @@ async def get_seriess_from_query(query: str) -> str:
         tasks = [tg.create_task(search_series(keyword)) for keyword in keywords]
     series_md_list = [task.result() for task in tasks]
     seriess_md = "\n".join(series_md_list)
-    # seriess_md = await search_series(keywords)
     with open("md_output/seriess.md", "w") as f:
         f.write(seriess_md)
     return seriess_md
