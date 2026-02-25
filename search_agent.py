@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, ModelRetry
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
 from typing import List
@@ -32,11 +32,17 @@ keyword_agent = Agent(
     output_type=Keywords,
     system_prompt="""\
 You are an agent that generates keywords from user input.
-Use the user query provided to generate keywords to search for in the FRED API.
-Pick one set of keywords and respond with only the keywords in a format sanitized for inserting into a HTTP request query parameter. Do not include any other text.
-The output should be a list of keywords.
+Use the user question provided to generate keywords to search for in the FRED API.
+Pick one set of keywords and respond with only the keywords in a format sanitized for inserting into a HTTP request question parameter. Do not include any other text.
+Respond ONLY with a JSON object containing 'keywords' list. No other text.
 """
 )
+
+@keyword_agent.output_validator
+async def validate_keywords(output: Keywords) -> Keywords:
+    if not output.keywords and type(output.keywords) != list:
+        raise ModelRetry("Please respond with the list of keywords")
+    return output
 
 async def search_series(keywords: str) -> str:
     """
@@ -51,7 +57,7 @@ async def search_series(keywords: str) -> str:
     Returns:
         str: A numbered list of the series in markdown format, with each item including the title and id of the series found.
     """
-    logfire.info(f"Query String: {keywords}")
+    logfire.info(f"Question String: {keywords}")
     json_response = search_keywords(keywords)
     if json_response:
         seriess = json_response["seriess"]
@@ -69,22 +75,22 @@ def sanitize_keywords(keywords: List[str]) -> List[str]:
         output.append(quote(keyword.replace(" ", "+"), safe="+"))
     return output
 
-async def get_seriess_from_query(query: str) -> str:
+async def get_seriess_from_question(question: str) -> str:
     """
-    This function takes a user query and uses it to search the FRED API.
-    It takes the query and uses it to generate keywords, which are then used to search the FRED API.
+    This function takes a user question and uses it to search the FRED API.
+    It takes the question and uses it to generate keywords, which are then used to search the FRED API.
     The results from the FRED API are then formatted into markdown text.
     The markdown text is a numbered list of the series found, with each item including the title and id of the series found.
     If no results are found, it returns "No results found"
 
     Args:
-        query (str): The user query to search for in the FRED API.
+        question (str): The user question to search for in the FRED API.
 
     Returns:
         str: A numbered list of the series in markdown format, with each item including the title and id of the series found.
     """
-    logfire.info(f"Query: {query}")
-    result = await keyword_agent.run(query)
+    logfire.info(f"Question: {question}")
+    result = await keyword_agent.run(question)
     logfire.info(f"Keywords: {result.output.keywords}")
     keywords = sanitize_keywords(result.output.keywords)
     async with asyncio.TaskGroup() as tg:
@@ -104,17 +110,25 @@ series_picker_agent = Agent(
     model=ollama_model,
     output_type=Series,
     system_prompt="""\
-You are an agent that picks one series from a list of series that best matches the query provided by the user.
+You are an agent that picks one series from a list of series that best matches the question provided by the user.
+Respond ONLY with a JSON object containing 'title' and 'id' fields. No other text.
 """
 )
 
-async def pick_series(query: str, seriess_md: str) -> dict | None:
+@series_picker_agent.output_validator
+async def validate_series(output: Series) -> Series:
+    if not output.title or not output.id:
+        raise ModelRetry("Please respond with both a title and id.")
+    return output
+
+async def pick_series(question: str, seriess_md: str) -> dict | None:
     prompt = f"""\
-Given a query {query}, pick one series that best answers the query from the following markdown list:
+Given a question {question}, pick one series that best answers the question from the following markdown list:
 
 {seriess_md}
 
-Respond with only the series title and id chosen.
+Respond with ONLY a JSON object in this exact format, nothing else:
+{{"title": "Series Title Here", "id": "series-id-here"}}
 """
     logfire.info(f"Prompt: {prompt}")
     result = await series_picker_agent.run(prompt)
