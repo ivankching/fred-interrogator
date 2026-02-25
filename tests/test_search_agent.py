@@ -22,7 +22,7 @@ async def test_keyword_agent():
 def test_sanitize_keywords():
     keywords = ["Monetary Service Index (MSI)", "Monthly"]
     result = sanitize_keywords(keywords)
-    expected_result = "Monetary+Service+Index+%28MSI%29|Monthly"
+    expected_result = ["Monetary+Service+Index+%28MSI%29", "Monthly"]
     assert result == expected_result
 
 @pytest.mark.asyncio

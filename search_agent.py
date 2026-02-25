@@ -66,7 +66,7 @@ async def search_series(keywords: str) -> str:
 def sanitize_keywords(keywords: List[str]) -> List[str]:
     output = []
     for keyword in keywords:
-        output.append(quote(keyword.replace(" ", "+")))
+        output.append(quote(keyword.replace(" ", "+"), safe="+"))
     return output
 
 async def get_seriess_from_query(query: str) -> str:
