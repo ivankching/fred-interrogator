@@ -39,7 +39,7 @@ def pull_observations(series_id: str) -> dict:
     Returns
     -------
     dict | None
-        sucess or failure of downloading and saving data, with path to zip file.
+        success or failure of downloading and saving data, with path to zip file.
     """
 
     api_key = str(os.getenv("FRED_API_KEY"))
