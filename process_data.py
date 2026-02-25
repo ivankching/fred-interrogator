@@ -4,7 +4,6 @@ from pathlib import Path
 import csv
 from datetime import datetime
 import random
-import duckdb
 
 logfire.configure(send_to_logfire=True)
 

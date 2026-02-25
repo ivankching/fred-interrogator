@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pydantic import Field, BaseModel
+from pydantic import Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
