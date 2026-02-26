@@ -49,3 +49,12 @@ async def test_pick_series():
         seriess_md = f.read()
     result = await pick_series(question, seriess_md)
     assert result
+
+@pytest.mark.asyncio
+async def test_pick_series_unemployment():
+    question = "What is the total unemployment rate in the US in 2022?"
+    with open("tests/seriess_unemployment.md", "r") as f:
+        seriess_md = f.read()
+    result = await pick_series(question, seriess_md)
+    assert result
+    assert result == {"title": "Unemployment Rate", "id": "UNRATE"}

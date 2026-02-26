@@ -17,6 +17,7 @@ logfire.instrument_pydantic_ai()
 
 
 FRED_MAX_SERIES_REQUESTS = 5
+MAX_SERIES_TO_PICK = 20         # Can increase if context size allows
 
 class Keywords(BaseModel):
     """The overall structure representing a list of keywords"""
@@ -44,7 +45,7 @@ async def validate_keywords(output: Keywords) -> Keywords:
         raise ModelRetry("Please respond with the list of keywords")
     return output
 
-async def search_series(keywords: str) -> str:
+async def search_series(keywords: str) -> List[dict]:
     """
     This function takes a set of keywords and uses them to search the FRED API.
     It then takes the results from the FRED API and formats them into markdown text.
@@ -55,19 +56,27 @@ async def search_series(keywords: str) -> str:
         keywords (str): The keywords to search for in the FRED API.
 
     Returns:
-        str: A numbered list of the series in markdown format, with each item including the title and id of the series found.
+        List[dict] | None: A list of the series as dicts, with each item including the title and id of the series found.
     """
     logfire.info(f"Question String: {keywords}")
     json_response = search_keywords(keywords)
     if json_response:
         seriess = json_response["seriess"]
-        md_output = ""
+        output = []
         for i in range(len(seriess)):
-            item = f"{i+1}. title: {seriess[i]["title"]}\n\t- id: {seriess[i]['id']}\n"
-            md_output += item
-        logfire.info(f"Tool Results: {md_output}")
-        return md_output
-    return "No results found"
+            item = {"title": seriess[i]["title"], "id": seriess[i]["id"]}
+            output.append(item)
+        logfire.info(f"Tool Results: {output}")
+        return output
+    logfire.error("No results found")
+    return []
+
+def seriess_to_md(seriess: List[dict]) -> str:
+    md_output = ""
+    for i in range(len(seriess)):
+        item = f"{i+1}. title: {seriess[i]['title']}\n\t- id: {seriess[i]['id']}\n"
+        md_output += item
+    return md_output
 
 def sanitize_keywords(keywords: List[str]) -> List[str]:
     output = []
@@ -96,8 +105,9 @@ async def get_seriess_from_question(question: str) -> str:
     async with asyncio.TaskGroup() as tg:
         keywords = keywords[:FRED_MAX_SERIES_REQUESTS]
         tasks = [tg.create_task(search_series(keyword)) for keyword in keywords]
-    series_md_list = [task.result() for task in tasks]
-    seriess_md = "\n".join(series_md_list)
+    series_lists = [task.result() for task in tasks] # This is a list of lists
+    series_list = [x for sublist in series_lists for x in sublist]
+    seriess_md = seriess_to_md(series_list[:MAX_SERIES_TO_PICK])
     with open("md_output/seriess.md", "w") as f:
         f.write(seriess_md)
     return seriess_md
