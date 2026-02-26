@@ -10,7 +10,7 @@ def test_zipfile_to_csv():
 
 # TODO: Test get_csv_schema
 def test_get_csv_schema():
-    schema = get_csv_schema(Path("tests/obs._by_real-time_period.csv"))
+    schema = get_csv_schema(Path("tests/obs._by_real-time_period_MSIM2.csv"))
     columns = ["period_start_date", "MSIM2", "realtime_start_date", "realtime_end_date"]
     types = {"period_start_date": "date", "MSIM2": "float", "realtime_start_date": "date", "realtime_end_date": "empty"}
     sample_size = 100
@@ -31,7 +31,7 @@ def test_infer_type():
     assert infer_type(date_values) == 'date'
 
 def test_db_relation_from_csv():
-    csv_path = Path('tests/obs._by_real-time_period.csv')
+    csv_path = Path('tests/obs._by_real-time_period_MSIM2.csv')
     relation = duckdb.read_csv(csv_path)
     assert relation
 
