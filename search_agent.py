@@ -34,7 +34,7 @@ keyword_agent = Agent(
     system_prompt="""\
 You are an agent that generates keywords from user input.
 Use the user question provided to generate keywords to search for in the FRED API.
-Pick one set of keywords and respond with only the keywords in a format sanitized for inserting into a HTTP request question parameter. Do not include any other text.
+Order the keywords in the list by relevance to the user question.
 Respond ONLY with a JSON object containing 'keywords' list. No other text.
 """
 )
@@ -121,6 +121,7 @@ series_picker_agent = Agent(
     output_type=Series,
     system_prompt="""\
 You are an agent that picks one series from a list of series that best matches the question provided by the user.
+Slight preference for the series at the top of the list.
 Respond ONLY with a JSON object containing 'title' and 'id' fields. No other text.
 """
 )
