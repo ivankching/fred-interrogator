@@ -5,7 +5,7 @@ from pydantic_ai.providers.ollama import OllamaProvider
 from search_agent import get_seriess_from_question, pick_series
 from pull_fred import pull_observations
 from process_data import zipfile_to_csv, get_csv_schema
-from query_agent import DatabaseInfo, get_sql_query, execute_sql_query
+from query_agent import DatabaseInfo, get_sql_query, execute_sql_agent
 
 import logfire
 
@@ -47,8 +47,8 @@ async def get_data_from_question(question: str) -> DatabaseInfo | None:
     db_schema = get_csv_schema(csv_path[0])
     return DatabaseInfo(csv_path=csv_path[0], db_schema=db_schema)
 
-# @orchestrator_agent.tool_plain
-# async def generate_and_execute_sql(database_info: DatabaseInfo, question: str) -> str | None:
-#     sql_query = await get_sql_query(database_info, question)
-#     result = await execute_sql_query(sql_query)
-#     return result
+@orchestrator_agent.tool_plain
+async def generate_and_execute_sql(database_info: DatabaseInfo, question: str) -> str | None:
+    answer = await execute_sql_agent.run(question, deps=database_info)
+    logfire.info(answer.output)
+    return answer.output
