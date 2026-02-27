@@ -121,7 +121,7 @@ series_picker_agent = Agent(
     output_type=Series,
     system_prompt="""\
 You are an agent that picks one series from a list of series that best matches the question provided by the user.
-Slight preference for the series at the top of the list.
+Prefer series at the higher up on the list.
 Respond ONLY with a JSON object containing 'title' and 'id' fields. No other text.
 """
 )
@@ -134,10 +134,11 @@ async def validate_series(output: Series) -> Series:
 
 async def pick_series(question: str, seriess_md: str) -> dict | None:
     prompt = f"""\
-Given a question {question}, pick one series that best answers the question from the following markdown list:
+Given a question {question}, pick one series that is most relevant to the question from the following markdown list:
 
 {seriess_md}
 
+Prefer series at the higher up on the list.
 Respond with ONLY a JSON object in this exact format, nothing else:
 {{"title": "Series Title Here", "id": "series-id-here"}}
 """
