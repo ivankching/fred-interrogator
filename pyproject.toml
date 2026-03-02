@@ -9,6 +9,7 @@ dependencies = [
     "duckdb>=1.4.4",
     "ipython>=9.9.0",
     "pydantic-ai>=1.51.0",
+    "pydantic-ai-slim[web]>=1.51.0",
     "requests>=2.32.5",
 ]
 

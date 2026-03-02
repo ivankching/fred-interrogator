@@ -598,6 +598,7 @@ dependencies = [
     { name = "duckdb" },
     { name = "ipython" },
     { name = "pydantic-ai" },
+    { name = "pydantic-ai-slim", extra = ["web"] },
     { name = "requests" },
 ]
 
@@ -613,6 +614,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.4.4" },
     { name = "ipython", specifier = ">=9.9.0" },
     { name = "pydantic-ai", specifier = ">=1.51.0" },
+    { name = "pydantic-ai-slim", extras = ["web"], specifier = ">=1.51.0" },
     { name = "requests", specifier = ">=2.32.5" },
 ]
 
@@ -1826,6 +1828,11 @@ ui = [
 vertexai = [
     { name = "google-auth" },
     { name = "requests" },
+]
+web = [
+    { name = "httpx" },
+    { name = "starlette" },
+    { name = "uvicorn" },
 ]
 xai = [
     { name = "xai-sdk" },
