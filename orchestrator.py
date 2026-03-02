@@ -22,14 +22,25 @@ orchestrator_agent = Agent(
     output_type=str,
     system_prompt="""\
 You are an agent that orchestrates the execution of agents.
-You are given a question and a list of agents.
-You should use the agents to get the DatabaseInfo required to answer the question.
-Use the DatabaseInfo to execute the SQL agent to answer the question.
+You are given a user question.
+You should use the 'get_data_from_question' tool to get the DatabaseInfo required to answer the question.
+Use the DatabaseInfo in the 'generate_and_execute_sql' tool to answer the question.
 """
 )
 
 @orchestrator_agent.tool_plain
 async def get_data_from_question(question: str) -> DatabaseInfo | None:
+    """
+    This function takes a user question and uses it to pull the relevant data from FRED and return the DatabaseInfo
+    where the data is stored.
+    
+    Args:
+        question (str): The user question
+    
+    Returns:
+        DatabaseInfo: The database information where the data is stored. Used in the 'generate_and_execute_sql' tool
+    """
+    
     seriess = await get_seriess_from_question(question)
     series = await pick_series(question, seriess)
     if series is None:
@@ -49,6 +60,16 @@ async def get_data_from_question(question: str) -> DatabaseInfo | None:
 
 @orchestrator_agent.tool_plain
 async def generate_and_execute_sql(database_info: DatabaseInfo, question: str) -> str | None:
+    """
+    This function takes a DatabaseInfo object and a user question and uses it to generate and execute an SQL query.
+    
+    Args:
+        database_info (DatabaseInfo): The database information where the data is stored. Generated from 'get_data_from_question' tool
+        question (str): The user question.
+    
+    Returns:
+        str: The answer to the user question. Returns None if there if the SQL query fails.
+    """
     answer = await execute_sql_agent.run(question, deps=database_info)
     logfire.info(answer.output)
     return answer.output

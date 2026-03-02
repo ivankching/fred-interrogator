@@ -20,3 +20,9 @@ async def test_generate_and_execute_sql():
     database_info = DatabaseInfo(csv_path=csv_path, db_schema=db_schema)
     answer = await generate_and_execute_sql(database_info, question)
     assert answer
+
+@pytest.mark.asyncio
+async def test_orchestrator_agent():
+    question = "What is the unemployment rate in the US in 2023?"
+    result = await orchestrator_agent.run(question)
+    assert result
