@@ -6,6 +6,9 @@ import logfire
 load_dotenv()
 logfire.configure(send_to_logfire=True)
 
+FRED_SEARCH_LIMIT = 20
+FRED_API_URL = "https://api.stlouisfed.org/fred"
+
 def search_keywords(keywords: str) -> dict | None:
     """
     Search for keywords in the Federal Reserve Economic Data (FRED) API
@@ -22,7 +25,7 @@ def search_keywords(keywords: str) -> dict | None:
     """
     keywords = keywords.replace(" ", "+")
     api_key = str(os.getenv("FRED_API_KEY"))
-    url = f"https://api.stlouisfed.org/fred/series/search?search_text={keywords}&api_key={api_key}&file_type=json"
+    url = f"{FRED_API_URL}/series/search?search_text={keywords}&api_key={api_key}&file_type=json&limit={FRED_SEARCH_LIMIT}"
     response = r.get(url).json()
     logfire.info(f"Response: {response}")
     return response
@@ -39,11 +42,11 @@ def pull_observations(series_id: str) -> dict:
     Returns
     -------
     dict | None
-        sucess or failure of downloading and saving data, with path to zip file.
+        success or failure of downloading and saving data, with path to zip file.
     """
 
     api_key = str(os.getenv("FRED_API_KEY"))
-    url = f"https://api.stlouisfed.org/fred/series/observations?series_id={series_id}&api_key={api_key}&file_type=csv"
+    url = f"{FRED_API_URL}/series/observations?series_id={series_id}&api_key={api_key}&file_type=csv"
     response = r.get(url)
     zip_path = f"data/{series_id}.zip"
     try:
