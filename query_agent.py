@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from pydantic import Field
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, RunContext, ModelRetry
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
 from urllib.parse import quote
@@ -52,6 +52,16 @@ Respond with only the SQL query. Do not include any other text.
 """
     return system_prompt
 
+@sql_agent.output_validator
+async def validate_sql_query(ctx: RunContext[DatabaseInfo], output: str) -> str:
+    table_name = f"read_csv_auto('{str(ctx.deps.csv_path).replace('\\', '/')}'"
+    if not output:
+        raise ModelRetry("Please respond with an SQL query.")
+    if output.find(table_name) < 0:
+        raise ModelRetry(f"Please respond with an SQL query that uses the table name {table_name}.")
+    
+    return output
+
 
 execute_sql_agent = Agent(
     model=ollama_model,
@@ -59,7 +69,9 @@ execute_sql_agent = Agent(
     output_type=str,
     system_prompt="""\
 You are an agent that generates, validates and executes SQL queries.
+Use the get_sql_query tool to generate SQL queries.
 Every time an SQL query is generated, validate it and execute it.
+Always use the execute_sql_query tool to execute the SQL query.
 If the generated SQL query fails to validate or fails to execute, try to modify the question and generate a new SQL query.
 
 Use the result of the SQL query to answer the user question.
@@ -97,6 +109,7 @@ async def execute_sql_query(sql_query: str) -> str|None:
     sql_query.replace("\\", "") # sometimes read_csv_auto('tablename') escapes the '
     try:
         result = duckdb.sql(sql_query).fetchall()
+        logfire.info(f"SQL execution result: {str(result)}")
         return str(result)
     except duckdb.Error as e:
         logfire.error(f"SQL error: {e}")
