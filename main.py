@@ -1,5 +1,7 @@
+import uvicorn
+
 def main():
-    print("Hello from fred-interrogator!")
+    uvicorn.run("app:app", host="127.0.0.1", port=7932)
 
 
 if __name__ == "__main__":
