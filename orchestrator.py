@@ -5,7 +5,7 @@ from pydantic_ai.providers.ollama import OllamaProvider
 from search_agent import get_seriess_from_question, pick_series
 from pull_fred import pull_observations
 from process_data import zipfile_to_csv, get_csv_schema
-from query_agent import DatabaseInfo, get_sql_query, execute_sql_agent
+from query_agent import DatabaseInfo, execute_sql_agent, Answer
 
 import logfire
 
@@ -13,7 +13,7 @@ logfire.configure()
 logfire.instrument_pydantic_ai()
 
 ollama_model = OpenAIChatModel(
-    model_name='granite4:7b-a1b-h',
+    model_name="qwen3.5:9b",
     provider=OllamaProvider(),  
 )
 
@@ -56,7 +56,7 @@ async def get_data_from_question(ctx: RunContext[DatabaseInfo], question: str) -
         return {"success": False, "error": "No observations found or no zip file saved"}
     
     csv_path = zipfile_to_csv(observations_results["zip_path"])
-    if csv_path is None:
+    if csv_path is None or len(csv_path) == 0:
         return {"success": False, "error": "Failed to unzip zip file"}
     
     db_schema = get_csv_schema(csv_path[0])
@@ -64,7 +64,7 @@ async def get_data_from_question(ctx: RunContext[DatabaseInfo], question: str) -
     return {"success": True, "csv_path": csv_path[0], "db_schema": db_schema}
 
 @orchestrator_agent.tool
-async def generate_and_execute_sql(ctx: RunContext[DatabaseInfo], question: str) -> str | None:
+async def generate_and_execute_sql(ctx: RunContext[DatabaseInfo], question: str) -> Answer | None:
     """
     This function takes a DatabaseInfo object and a user question and uses it to generate and execute an SQL query.
     
@@ -85,5 +85,5 @@ async def generate_and_execute_sql(ctx: RunContext[DatabaseInfo], question: str)
         db_schema = get_data_result["db_schema"]
         database_info = DatabaseInfo(csv_path=csv_path[0], db_schema=db_schema)
     answer = await execute_sql_agent.run(question, deps=database_info)
-    logfire.info(answer.output)
+    # logfire.info(answer.output.answer)
     return answer.output

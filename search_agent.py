@@ -24,7 +24,7 @@ class Keywords(BaseModel):
     keywords: List[str] = Field(description="The keywords to search for in the FRED API.")
 
 ollama_model = OpenAIChatModel(
-    model_name='granite4:7b-a1b-h',
+    model_name="qwen3.5:9b",
     provider=OllamaProvider(),  
 )
 

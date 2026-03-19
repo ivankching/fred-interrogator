@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 from pydantic_ai import Agent, RunContext, ModelRetry
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
@@ -16,7 +16,7 @@ logfire.configure()
 logfire.instrument_pydantic_ai()
 
 ollama_model = OpenAIChatModel(
-    model_name='granite4:7b-a1b-h',
+    model_name="qwen3.5:9b",
     provider=OllamaProvider(),  
 )
 
@@ -62,19 +62,23 @@ async def validate_sql_query(ctx: RunContext[DatabaseInfo], output: str) -> str:
     
     return output
 
+class Answer(BaseModel):
+    answer: str = Field(description="The answer to the user question.")
+    sql_query: str = Field(description="The SQL query used to answer the user question.")   
 
 execute_sql_agent = Agent(
     model=ollama_model,
     deps_type=DatabaseInfo,
-    output_type=str,
+    output_type=Answer,
     system_prompt="""\
 You are an agent that generates, validates and executes SQL queries.
-Use the get_sql_query tool to generate SQL queries.
+You must use the get_sql_query tool to generate SQL queries.
 Every time an SQL query is generated, validate it and execute it.
 Always use the execute_sql_query tool to execute the SQL query.
 If the generated SQL query fails to validate or fails to execute, try to modify the question and generate a new SQL query.
 
 Use the result of the SQL query to answer the user question.
+Output both the answer and the SQL query as a json with form {"answer": answer, "sql_query": sql_query}
 """
 )
 
