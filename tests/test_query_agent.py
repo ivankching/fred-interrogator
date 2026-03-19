@@ -26,6 +26,7 @@ async def test_execute_sql_agent():
     db_schema = get_csv_schema(Path('tests/obs._by_real-time_period_MSIM2.csv'))
     database_info = DatabaseInfo(csv_path=csv_path, db_schema=db_schema)
     result = await execute_sql_agent.run("What is the average value of the MSIM2 series?", deps=database_info)
-    logfire.info(result.output)
+    logfire.info(f"Answer: {result.output.answer}")
+    logfire.info(f"SQL: {result.output.sql_query}")
     assert result
-    assert result.output.find("4015") >= 0
+    assert result.output.answer.find("4015") >= 0
